@@ -158,12 +158,28 @@ namespace ScpiNet
 
 		/// <summary>
 		/// Performs a query to the device. First a command is sent and then a response is received.
+		/// If the StripHeaders property is true, the response parser automatically strips response headers (and requires them to be present).
 		/// </summary>
 		/// <param name="command">Command to send. New line is automatically added.
 		/// Use only when you configured the instrument to include the headers in the response.</param>
 		/// <param name="cancellationToken">Cancellation token. Optional.</param>
 		/// <returns>Command response.</returns>
 		protected async Task<string> Query(string command, CancellationToken cancellationToken = default)
+		{
+			return await Query(command, StripHeaders, cancellationToken);
+		}
+
+		/// <summary>
+		/// Performs a query to the device. First a command is sent and then a response is received.
+		/// This method allows to override the StripHeaders property for this particular query. This makes sense for the basic SCPI commands
+		/// which never return headers.
+		/// </summary>
+		/// <param name="command">Command to send. New line is automatically added.
+		/// Use only when you configured the instrument to include the headers in the response.</param>
+		/// <param name="stripHeaders">If true, the response parser automatically strips response headers (and it requires them to be present).</param>
+		/// <param name="cancellationToken">Cancellation token. Optional.</param>
+		/// <returns>Command response.</returns>
+		protected async Task<string> Query(string command, bool stripHeaders, CancellationToken cancellationToken = default)
 		{
 			// Send command to the instrument:
 			Logger?.LogDebug($"Query: {command}");
@@ -173,7 +189,7 @@ namespace ScpiNet
 			string response = await Connection.ReadString(0, cancellationToken);
 
 			// If you turned on the response headers, you probably want to strip them from the response:
-			if (StripHeaders) {
+			if (stripHeaders) {
 				response = StripHeader(response, command);
 			}
 
