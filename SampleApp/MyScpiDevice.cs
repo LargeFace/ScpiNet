@@ -38,7 +38,7 @@ namespace SampleApp
 		/// (constructors cannot be async).
 		/// </summary>
 		/// <param name="connection">Instance of connection to be used for communication.</param>
-		/// <param name="deviceId">Devie ID.</param>
+		/// <param name="deviceId">Device ID.</param>
 		/// <param name="logger">Logger instance.</param>
 		protected MyScpiDevice(IScpiConnection connection, string deviceId, ILogger<ScpiDevice> logger = null)
 			: base(connection, deviceId, logger)
@@ -52,7 +52,7 @@ namespace SampleApp
 		/// <returns>Value of the device's status buffer.</returns>
 		public async Task<string> ReadStatusByte(CancellationToken cancellationToken = default)
 		{
-			return await Query("*STB?", cancellationToken);
+			return await Query("*STB?", false, cancellationToken);
 		}
 	}
 }
