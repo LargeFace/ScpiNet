@@ -549,6 +549,9 @@ namespace ScpiNet
 
 			try {
 				overlapped.EventHandle = CreateEvent(IntPtr.Zero, false, false, null);
+				if (overlapped.EventHandle == IntPtr.Zero) {
+					throw CreateWin32Exception(Marshal.GetLastWin32Error(), "CreateEvent() failed");
+				}
 
 				// Make asynchronous write request. It works better than synchronous request, when the USB communication breaks apart.
 				if (WriteFile(DevHandle, data, data.Length, out uint written, ref overlapped)) {
@@ -571,7 +574,9 @@ namespace ScpiNet
 					throw new Exception(string.Format("WriteUsb() failed: {0} bytes requested, but {1} written.", data.Length, bytesWritten));
 				}
 			} finally {
-				CloseHandle(overlapped.EventHandle);
+				if (overlapped.EventHandle != IntPtr.Zero) {
+					CloseHandle(overlapped.EventHandle);
+				}
 			}
 		}
 
@@ -588,6 +593,9 @@ namespace ScpiNet
 
 			try {
 				overlapped.EventHandle = CreateEvent(IntPtr.Zero, false, false, null);
+				if (overlapped.EventHandle == IntPtr.Zero) {
+					throw CreateWin32Exception(Marshal.GetLastWin32Error(), "CreateEvent() failed");
+				}
 
 				// Issue asynchronous read request:
 				if (ReadFile(DevHandle, buffer, buffer.Length, out int read, ref overlapped)) {
@@ -604,7 +612,9 @@ namespace ScpiNet
 				// Wait for completing and return the number of transferred bytes:
 				return WaitForAsyncOperation(ref overlapped, timeout, cancellationToken);
 			} finally {
-				CloseHandle(overlapped.EventHandle);
+				if (overlapped.EventHandle != IntPtr.Zero) {
+					CloseHandle(overlapped.EventHandle);
+				}
 			}
 		}
 
