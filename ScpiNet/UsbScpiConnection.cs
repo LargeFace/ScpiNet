@@ -404,7 +404,7 @@ namespace ScpiNet
 		{
 			DevicePath = devPath;
 			DevHandle = null;
-			Tag = 1;
+			Tag = 0;
 			TagCheckEnabled = true;
 			Logger = logger;
 		}
@@ -630,6 +630,8 @@ namespace ScpiNet
 			uint len = length;
 			if (data != null && length == 0) {
 				len = (uint)data.Length;
+			} else if (data == null) {
+				len = 1;
 			}
 
 			// Increment the tag number:
@@ -733,7 +735,7 @@ namespace ScpiNet
 				EnforceCommPause();
 
 				// Write reading request to the device:
-				WriteUsb(CreateTmcRequest(UsbTmcMsgId.DevDepMsgIn, false, null, (uint)readLength), cancellationToken);
+				WriteUsb(CreateTmcRequest(UsbTmcMsgId.DevDepMsgIn, false, null), cancellationToken);
 
 				// Receive the answer:
 				int headerSize = Marshal.SizeOf(typeof(UsbTmcHeader));
