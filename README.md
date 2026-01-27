@@ -120,11 +120,6 @@ is a very complex task:
   corresponds to the request. Some devices ignore this and return zero *Tag* in the response. In order to work around
   this problem, the `UsbScpiConnection` class provides a property `TagCheckEnabled` which is `true` by default.
   If you receive tag mismatch errors, you can try to set this property to `false`.
-- Some devices are sensitive to the size of reading buffer, even though this should not affect the communication.
-  If I passed too large buffer to these devices, the request simply timed out. Therefore, the `IScpiConnection`
-  interface contains a property called `DefaultBufferSize` which allows to fine tune the buffer size. The default
-  value is only 128 bytes, which is safely small. You can increase it in your device driver/application if you
-  want to read larger responses in a single step.
 
 
 # Support and contributions
