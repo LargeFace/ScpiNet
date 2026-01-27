@@ -494,11 +494,10 @@ namespace ScpiNet
 		/// </summary>
 		protected void EnforceCommPause()
 		{
-			int lastPause = (DateTime.Now - LastCmdTimeStamp).Milliseconds;
+			int lastPause = (int)(DateTime.Now - LastCmdTimeStamp).TotalMilliseconds;
 			if (lastPause < CommPauseMs) {
 				Thread.Sleep(CommPauseMs - lastPause + 1);
 			}
-			Thread.Sleep(10);
 		}
 
 		/// <summary>
