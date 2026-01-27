@@ -38,6 +38,12 @@ namespace ScpiNet
 		private static extern bool WriteFile(SafeFileHandle handle, byte[] bytes, int numBytesToWrite, out uint numBytesWritten, ref NativeOverlapped overlapped);
 
 		/// <summary>
+		/// Gets result of an overlapped operation.
+		/// </summary>
+		[DllImport("kernel32.dll", SetLastError = true)]
+		private static extern bool GetOverlappedResult(SafeFileHandle hFile, ref NativeOverlapped lpOverlapped, out uint lpNumberOfBytesTransferred, bool bWait);
+
+		/// <summary>
 		/// Sends a control code directly to a specified device driver, causing the corresponding device to perform the corresponding operation.
 		/// </summary>
 		[DllImport("kernel32.dll", ExactSpelling = true, SetLastError = true)]
@@ -67,8 +73,8 @@ namespace ScpiNet
 		/// <summary>
 		/// Cancels running IO operation.
 		/// </summary>
-		[DllImport("kernel32.dll")]
-		private static extern bool CancelIo(SafeFileHandle hFile);
+		[DllImport("kernel32.dll", SetLastError = true)]
+		private static extern bool CancelIoEx(SafeFileHandle hFile, IntPtr lpOverlapped);
 
 		/// <summary>
 		/// GUID of USB TMC devices.
@@ -428,9 +434,6 @@ namespace ScpiNet
 				throw CreateWin32Exception(Marshal.GetLastWin32Error(), "Failed to open USB TMC device");
 			}
 
-			// Bind device handle to the thread pool. This is necessary to make overlapped IO working:
-			ThreadPool.BindHandle(DevHandle);
-
 			// Ensure the device buffers are clear. This used to work in C++ with Tektronix OSC, but here
 			// it breaks communication with Keysight multimeter.
 			//ResetPipe();
@@ -508,12 +511,15 @@ namespace ScpiNet
 		protected int WaitForAsyncOperation(ref NativeOverlapped overlapped, int timeout, CancellationToken cancellationToken)
 		{
 			try {
-				for (int t = timeout; t > 0; t -= 500)
+				for (int t = timeout; t > 0; t -= 100)
 				{
-					switch (WaitForSingleObject(overlapped.EventHandle, 500))
+					switch (WaitForSingleObject(overlapped.EventHandle, 100))
 					{
 						case WAIT_OBJECT_0:
-							return (int)overlapped.InternalHigh;
+							if (!GetOverlappedResult(DevHandle, ref overlapped, out uint transferred, false)) {
+								throw CreateWin32Exception(Marshal.GetLastWin32Error(), "GetOverlappedResult() failed");
+							}
+							return (int)transferred;
 
 						case WAIT_TIMEOUT:
 							cancellationToken.ThrowIfCancellationRequested();
@@ -526,7 +532,7 @@ namespace ScpiNet
 
 				throw new TimeoutException("USB I/O operation timed out.");
 			} catch {
-				CancelIo(DevHandle);
+				CancelIoEx(DevHandle, IntPtr.Zero);
 				throw;
 			}
 		}
